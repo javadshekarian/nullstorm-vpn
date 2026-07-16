@@ -8,6 +8,7 @@ import com.tencent.mmkv.MMKV
 import com.edu.jetpack.parser.AppConfig.ANG_PACKAGE
 import com.edu.jetpack.parser.handler.SettingsManager
 import com.edu.jetpack.parser.util.LogUtil
+import es.dmoral.toasty.Toasty
 
 class AngApplication : MultiDexApplication() {
     companion object {
@@ -39,7 +40,7 @@ class AngApplication : MultiDexApplication() {
         }
         SettingsManager.setNightMode()
 
-        es.dmoral.toasty.Toasty.Config.getInstance()
+        Toasty.Config.getInstance()
             .setGravity(android.view.Gravity.BOTTOM, 0, 300)
             .apply()
     }

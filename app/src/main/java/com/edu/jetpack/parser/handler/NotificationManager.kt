@@ -17,7 +17,7 @@ import com.edu.jetpack.parser.core.CoreServiceManager
 import com.edu.jetpack.parser.dto.entities.ProfileItem
 import com.edu.jetpack.parser.extension.toSpeedString
 import com.edu.jetpack.parser.util.LogUtil
-import com.edu.jetpack.MainActivity  // <-- تغییر این خط
+import com.edu.jetpack.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
