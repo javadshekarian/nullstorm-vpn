@@ -45,7 +45,8 @@ fun ConfigCard(
     config: Config,
     modifier: Modifier = Modifier,
     onConnectClick: (Config) -> Unit = {},
-    onCardClick: (Config) -> Unit = {}
+    onCardClick: (Config) -> Unit = {},
+    onDeleteClick: (Config) -> Unit = {}
 ){
     var expanded by remember {
         mutableStateOf(false)
@@ -146,7 +147,10 @@ fun ConfigCard(
                             text = {
                                 Text("Delete")
                             },
-                            onClick = {}
+                            onClick = {
+                                onDeleteClick(config)
+                                expanded = false
+                            }
                         )
                     }
                 }
@@ -157,7 +161,7 @@ fun ConfigCard(
             )
 
             Text(
-                text = "#${config.id} ${config.name}",
+                text = "#${config.guid} ${config.name}",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -171,7 +175,7 @@ fun ConfigCard(
             ) {
                 Icon(
                     imageVector = Icons.Default.Language,
-                    contentDescription = null,
+                    contentDescription = "Server Address",
                     tint = Color.Gray
                 )
 
@@ -179,7 +183,7 @@ fun ConfigCard(
                     modifier = Modifier.width(8.dp)
                 )
 
-                Text(config.address)
+                Text("${config.profile.server}:${config.profile.serverPort}")
             }
 
             Spacer(
@@ -199,14 +203,14 @@ fun ConfigCard(
                 AssistChip(
                     onClick = {},
                     label = {
-                        Text(config.details)
+                        config.profile.security?.let { Text(it) }
                     }
                 )
 
                 AssistChip(
                     onClick = {},
                     label = {
-                        Text(config.fp)
+                        config.profile.fingerPrint?.let { Text(it) }
                     }
                 )
             }

@@ -28,18 +28,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.edu.jetpack.data.fakeConfigs
 import com.edu.jetpack.ui.component.ConfigCard
+import com.edu.jetpack.viewmodel.HomeViewModel
 
 @Composable
 fun Body(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel,
+    onImportClick: () -> Unit,
+    onFreeConfigClick: () -> Unit
 ){
+    val context = LocalContext.current
     var isConnected by remember {
         mutableStateOf(false)
     }
+
+    val configs by viewModel.configs.collectAsState(initial = emptyList())
+    val toastMessage by viewModel.toastMessage.collectAsState()
 
     val buttonColor =
         if (isConnected) Color(0xFF22C55E)
@@ -48,6 +56,13 @@ fun Body(
     val statusColor =
         if(isConnected) Color(0xFF22C55E)
         else Color.Gray
+
+    LaunchedEffect(toastMessage) {
+        toastMessage?.let { message ->
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
+            viewModel.clearToast()
+        }
+    }
 
     Box(
         modifier = modifier.fillMaxSize()
@@ -73,8 +88,8 @@ fun Body(
 
             Text(
                 text =
-                    if (isConnected) "Your connection is secure"
-                    else "Tap the button to connect"
+                    if (isConnected) "Your Connection Is Secure"
+                    else "Tap The Button To Connect"
             )
 
             Spacer(
@@ -84,6 +99,7 @@ fun Body(
             Button(
                 onClick = {
                     isConnected = !isConnected
+                    viewModel.isConnected = isConnected
                 },
                 modifier = Modifier
                     .size(180.dp)
@@ -129,25 +145,56 @@ fun Body(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedButton(
-                    onClick = {},
+                    onClick = onImportClick,
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("IMPORT CONFIG")
                 }
 
                 Button(
-                    onClick = {},
+                    onClick = onFreeConfigClick,
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("FREE CONFIG")
                 }
             }
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(fakeConfigs) {config ->
-                    ConfigCard(config)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (configs.isEmpty()) {
+                Spacer(modifier = Modifier.height(32.dp))
+                Text(
+                    text = "No Configs Available",
+                    color = Color.Gray,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(configs) {config ->
+                        ConfigCard(
+                            config = config,
+                            onConnectClick = { clickedConfig ->
+                                viewModel.currentConfigGuid = clickedConfig.guid
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Connecting To ${clickedConfig.name}",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            },
+                            onCardClick = { clickedConfig ->
+                                android.widget.Toast.makeText(
+                                    context,
+                                    "Selected: ${clickedConfig.name}",
+                                    android.widget.Toast.LENGTH_SHORT
+                                ).show()
+                            },
+                            onDeleteClick = {
+                                viewModel.removeConfig(config.guid)
+                            }
+                        )
+                    }
                 }
             }
         }
