@@ -1,7 +1,9 @@
 package com.edu.jetpack.ui.component
 
+import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -39,18 +41,23 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.edu.jetpack.model.Config
+import com.edu.jetpack.viewmodel.HomeViewModel
 
 @Composable
 fun ConfigCard(
     config: Config,
+    viewModel: HomeViewModel,
     modifier: Modifier = Modifier,
-    onConnectClick: (Config) -> Unit = {},
     onCardClick: (Config) -> Unit = {},
     onDeleteClick: (Config) -> Unit = {}
 ){
     var expanded by remember {
         mutableStateOf(false)
     }
+
+    val isConnected by viewModel.isConnected.collectAsState()
+    val connectedGuid by viewModel.connectedConfigGuid.collectAsState()
+    val isThisConnected = isConnected && connectedGuid == config.guid
 
     var connected by remember {
         mutableStateOf(false)
@@ -65,192 +72,197 @@ fun ConfigCard(
     }
 
     val connectButtonColor by animateColorAsState(
-        if(connected)  Color(0xFF22C55E)
+        if(isThisConnected)  Color(0xFF22C55E)
         else protocolColor,
         label = ""
     )
 
-    Card(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .clickable {
                 onCardClick(config)
-            },
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 8.dp
-        )
+            }
+            .border(
+                width = if (connectedGuid == config.guid) 3.dp else 0.dp,
+                color = if (connectedGuid == config.guid) Color(0xFF2563EB) else Color.Transparent,
+                shape = RoundedCornerShape(24.dp)
+            )
+            .padding(if (connectedGuid == config.guid) 0.dp else 0.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(18.dp)
+        Card(
+            modifier = modifier
+                .fillMaxWidth()
+                .clickable {
+                    onCardClick(config)
+                },
+            shape = RoundedCornerShape(24.dp),
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 8.dp
+            )
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier.padding(18.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(14.dp)
-                        .background(
-                            protocolColor,
-                            CircleShape
-                        )
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(14.dp)
+                            .background(
+                                protocolColor,
+                                CircleShape
+                            )
+                    )
 
-                Spacer(
-                    modifier = Modifier.width(10.dp)
-                )
+                    Spacer(
+                        modifier = Modifier.width(10.dp)
+                    )
 
-                Text(
-                    text = config.type.uppercase(),
-                    fontWeight = FontWeight.Bold,
-                    color = protocolColor
-                )
+                    Text(
+                        text = config.type.uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        color = protocolColor
+                    )
 
-                Spacer(
-                    modifier = Modifier.weight(1f)
-                )
+                    Spacer(
+                        modifier = Modifier.weight(1f)
+                    )
 
-                Box {
-                    IconButton(
-                        onClick = {
-                            expanded = true
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = null
-                        )
-                    }
-
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = {
-                            expanded = false
-                        }
-                    ) {
-                        DropdownMenuItem(
-                            text = {
-                                Text("Edit")
-                            },
-                            onClick = {}
-                        )
-
-                        DropdownMenuItem(
-                            text = {
-                                Text("Share")
-                            },
-                            onClick = {}
-                        )
-
-                        DropdownMenuItem(
-                            text = {
-                                Text("Delete")
-                            },
+                    Box {
+                        IconButton(
                             onClick = {
-                                onDeleteClick(config)
+                                expanded = true
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = null
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = {
                                 expanded = false
                             }
-                        )
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Edit")
+                                },
+                                onClick = {}
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Share")
+                                },
+                                onClick = {}
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Text("Delete")
+                                },
+                                onClick = {
+                                    onDeleteClick(config)
+                                    expanded = false
+                                }
+                            )
+                        }
                     }
                 }
-            }
 
-            Spacer(
-                modifier = Modifier.height(18.dp)
-            )
-
-            Text(
-                text = "#${config.guid} ${config.name}",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(
-                modifier = Modifier.height(12.dp)
-            )
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Language,
-                    contentDescription = "Server Address",
-                    tint = Color.Gray
+                Text(
+                    text = "#${config.profile.remarks}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
                 )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Language,
+                        contentDescription = "Server Address",
+                        tint = Color.Gray
+                    )
+
+                    Spacer(
+                        modifier = Modifier.width(5.dp)
+                    )
+
+                    Text("${config.profile.server}:${config.profile.serverPort}")
+                }
 
                 Spacer(
-                    modifier = Modifier.width(8.dp)
+                    modifier = Modifier.height(5.dp)
                 )
 
-                Text("${config.profile.server}:${config.profile.serverPort}")
-            }
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AssistChip(
+                        onClick = {},
+                        label = {
+                            Text(config.network)
+                        }
+                    )
 
-            Spacer(
-                modifier = Modifier.height(18.dp)
-            )
+                    AssistChip(
+                        onClick = {},
+                        label = {
+                            config.profile.security?.let { Text(it) }
+                        }
+                    )
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AssistChip(
-                    onClick = {},
-                    label = {
-                        Text(config.network)
-                    }
-                )
-
-                AssistChip(
-                    onClick = {},
-                    label = {
-                        config.profile.security?.let { Text(it) }
-                    }
-                )
-
-                AssistChip(
-                    onClick = {},
-                    label = {
-                        config.profile.fingerPrint?.let { Text(it) }
-                    }
-                )
-            }
-
-            Spacer(
-                modifier = Modifier.height(14.dp)
-            )
-
-            Text(
-                text = "SNI: ${config.sni}",
-                color = Color.Gray
-            )
-
-            Spacer(
-                modifier = Modifier.height(24.dp)
-            )
-
-            Button(
-                onClick = {
-                    connected = !connected
-                    onConnectClick(config)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = connectButtonColor
-                )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.PowerSettingsNew,
-                    contentDescription = null
-                )
+                    AssistChip(
+                        onClick = {},
+                        label = {
+                            config.profile.fingerPrint?.let { Text(it) }
+                        }
+                    )
+                }
 
                 Spacer(
-                    modifier = Modifier.width(8.dp)
+                    modifier = Modifier.height(5.dp)
                 )
 
                 Text(
-                    if(connected) "CONNECTED"
-                    else "CONNECT"
+                    text = "SNI: ${config.sni}",
+                    color = Color.Gray
                 )
+
+                Spacer(
+                    modifier = Modifier.height(5.dp)
+                )
+
+                Button(
+                    onClick = {
+                        viewModel.connectToConfig(config.guid)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = connectButtonColor
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PowerSettingsNew,
+                        contentDescription = null
+                    )
+
+                    Spacer(
+                        modifier = Modifier.width(5.dp)
+                    )
+
+                    Text(
+                        if(isThisConnected) "CONNECTED"
+                        else "CONNECT"
+                    )
+                }
             }
         }
     }

@@ -42,10 +42,7 @@ fun Body(
     onFreeConfigClick: () -> Unit
 ){
     val context = LocalContext.current
-    var isConnected by remember {
-        mutableStateOf(false)
-    }
-
+    val isConnected by viewModel.isConnected.collectAsState()
     val configs by viewModel.configs.collectAsState(initial = emptyList())
     val toastMessage by viewModel.toastMessage.collectAsState()
 
@@ -72,7 +69,7 @@ fun Body(
                 .fillMaxSize()
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
             Text(
                 text =
@@ -98,8 +95,7 @@ fun Body(
 
             Button(
                 onClick = {
-                    isConnected = !isConnected
-                    viewModel.isConnected = isConnected
+                    viewModel.toggleConnection()
                 },
                 modifier = Modifier
                     .size(180.dp)
@@ -162,7 +158,7 @@ fun Body(
             Spacer(modifier = Modifier.height(16.dp))
 
             if (configs.isEmpty()) {
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(150.dp))
                 Text(
                     text = "No Configs Available",
                     color = Color.Gray,
@@ -175,24 +171,19 @@ fun Body(
                     items(configs) {config ->
                         ConfigCard(
                             config = config,
-                            onConnectClick = { clickedConfig ->
-                                viewModel.currentConfigGuid = clickedConfig.guid
-                                android.widget.Toast.makeText(
-                                    context,
-                                    "Connecting To ${clickedConfig.name}",
-                                    android.widget.Toast.LENGTH_SHORT
-                                ).show()
-                            },
                             onCardClick = { clickedConfig ->
                                 android.widget.Toast.makeText(
                                     context,
                                     "Selected: ${clickedConfig.name}",
                                     android.widget.Toast.LENGTH_SHORT
                                 ).show()
+                                viewModel.setConnected(false)
+                                viewModel.setGuidBasedOnClickedConfig(clickedConfig.guid)
                             },
                             onDeleteClick = {
                                 viewModel.removeConfig(config.guid)
-                            }
+                            },
+                            viewModel = viewModel,
                         )
                     }
                 }

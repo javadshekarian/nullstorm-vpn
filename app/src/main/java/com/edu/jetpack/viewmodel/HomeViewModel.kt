@@ -31,14 +31,47 @@ class HomeViewModel(
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
 
-    private var _isConnected = false
-    var isConnected: Boolean
-        get() = _isConnected
-        set(value) { _isConnected = value }
+    private var _isConnected = MutableStateFlow(false)
+    val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+
+    private val _connectedConfigGuid = MutableStateFlow<String?>(null)
+    val connectedConfigGuid: StateFlow<String?> = _connectedConfigGuid.asStateFlow()
+
     var currentConfigGuid: String? = null
 
     init {
         loadConfigsFromMmkv()
+    }
+
+    fun toggleConnection() {
+        _isConnected.value = !_isConnected.value
+        if(_isConnected.value)
+            _toastMessage.value = "VPN Connected"
+        else
+            _toastMessage.value = "VPN Connected"
+    }
+
+    fun setConnected(status: Boolean) {
+        _isConnected.value = status
+    }
+
+    fun connectToConfig(guid: String) {
+        if (_isConnected.value && _connectedConfigGuid.value == guid){
+
+        } else {
+            _isConnected.value = true
+            _connectedConfigGuid.value = guid
+            currentConfigGuid = guid
+            _toastMessage.value = "Connect To ${getConfigRemark(guid)?.profile?.remarks}"
+        }
+    }
+
+    fun setGuidBasedOnClickedConfig(guid: String) {
+        _connectedConfigGuid.value = guid
+    }
+
+    private fun getConfigRemark(guid: String): Config? {
+        return _configs.value.find { it.guid == guid }
     }
 
     private fun isConfigExist(content: String): Boolean{
@@ -72,7 +105,7 @@ class HomeViewModel(
             val config = Config(
                 guid = guid,
                 name = name ?: "Imported Config",
-                type = (profile.configType ?: "Unknown") as String,
+                type = profile.configType?.name ?: "Unknown", // اصلاح شده
                 address = "${profile.server ?: ""}:${profile.serverPort ?: ""}",
                 network = profile.network ?: "tcp",
                 sni = profile.sni,
@@ -88,6 +121,7 @@ class HomeViewModel(
     }
 
     private fun stopVpnService() {
+        setConnected(false);
         try {
             Log.i(TAG, "VPN Service stopped")
         } catch (e: Exception) {
@@ -96,12 +130,11 @@ class HomeViewModel(
     }
 
     fun removeConfig(guid: String) {
+        Log.i(TAG, "*********************************************")
+        Log.i(TAG, "removeConfig Function Is Called, Guid: $guid")
         viewModelScope.launch {
-            if (guid.isNotEmpty())
+            if (guid.isNotEmpty()){
                 MmkvManager.removeServer(guid)
-
-            if (isConnected && guid.isNotEmpty() && guid == currentConfigGuid) {
-                isConnected = false
                 currentConfigGuid = null
 
                 stopVpnService()
@@ -125,7 +158,7 @@ class HomeViewModel(
                 val stringBuilder = StringBuilder()
                 var line: String?
                 while (reader.readLine().also { line = it } != null)
-                    stringBuilder.append(line).append("/n")
+                    stringBuilder.append(line).append("\n")
                 reader.close()
                 inputStream?.close()
 
