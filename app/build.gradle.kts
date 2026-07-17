@@ -11,6 +11,10 @@ android {
         }
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.edu.jetpack"
         minSdk = 24
